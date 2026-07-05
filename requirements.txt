@@ -1,0 +1,20 @@
+# Core (required for the synthetic smoke test; CPU is fine)
+torch>=2.1
+numpy>=1.24
+pyyaml>=6.0
+tqdm>=4.65
+
+# Real-data experiments (Amazon Reviews 2023 / MIND)
+pandas>=2.0
+requests>=2.31
+
+# Analysis: significance tests / confidence intervals (scripts/stats.py) and
+# figure generation
+scipy>=1.10
+matplotlib>=3.7
+
+# Frozen semantic encoders (choose what you use)
+sentence-transformers>=2.6   # text encoder (default for real data)
+# transformers>=4.40         # for CLIP/BLIP-2 text+image encoders
+# open_clip_torch>=2.24      # alternative CLIP implementation
+# Pillow>=10.0               # only if you encode item images
