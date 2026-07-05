@@ -1,0 +1,57 @@
+# CSA-Rec default configuration.
+# Every field can be overridden on the CLI, e.g.:
+#   python -m csarec.train --config configs/default.yaml --data.source synthetic
+
+seed: 2026
+device: cuda            # use "cpu" for the smoke test on a machine without GPU
+
+data:
+  source: synthetic     # synthetic | amazon | mind
+  root: ./data
+  category: Beauty      # Amazon Reviews 2023 category (Beauty/Baby_Products/Sports_and_Outdoors/Toys_and_Games)
+  min_user_inter: 5     # k-core filtering on users
+  min_item_inter: 5     # k-core filtering on items
+  cold_ratio: 0.1       # fraction of items held out entirely as cold-start items
+  cold_split: random    # random (default protocol) | temporal (newest items are cold)
+  # synthetic-only knobs
+  synth_users: 800
+  synth_items: 500
+  synth_dim: 32
+  synth_density: 0.03
+
+semantic:
+  method: hash          # hash (no deps, smoke) | sbert | clip
+  model_name: sentence-transformers/all-MiniLM-L6-v2
+  use_image: false      # clip only; requires downloaded item images
+  dim: 64               # only used by the "hash" method
+  cache: true           # cache item embeddings to <root>/<source>_<method>_sem.npy
+
+model:
+  backbone: lightgcn    # lightgcn | mf
+  emb_dim: 64
+  n_layers: 2           # lightgcn propagation layers
+  # --- CSA-Rec modules (ablation switches) ---
+  use_semantic: true    # false = pure CF (no cold-start capability)
+  saa_type: lowrank     # lowrank (proposed) | linear | mlp
+  saa_rank: 16          # low-rank bottleneck r
+  use_csia: true        # contrastive semantic-ID alignment loss
+  csia_tau: 0.2         # InfoNCE temperature
+  csia_lambda: 0.5      # weight of CSIA in the total loss
+  use_cpg: true         # true = content-guided neighbour aggregation; false = SAA output only
+  cpg_neighbors: 10     # K semantic neighbours (warm items) aggregated per item
+  cpg_temp: 0.1         # softmax temperature over neighbour similarities
+  use_fusion: true      # adaptive collaborative-content fusion (learnable beta); false = no direct semantic-match term
+
+train:
+  epochs: 50
+  batch_size: 2048
+  lr: 0.01              # 1e-3 collapses the embeddings to the zero fixed point; 1e-2 trains cleanly
+  weight_decay: 0.0     # global Adam weight decay drags embeddings to 0 -> BPR stalls; keep 0
+  num_neg: 1
+  eval_every: 5
+  patience: 5           # early stopping on validation NDCG@20 (all)
+  topk: [10, 20]
+
+output:
+  dir: ./runs
+  tag: csa_rec_default
